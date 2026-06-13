@@ -53,9 +53,22 @@ def _normalize_lyric_keyword(value: str) -> str:
             end = text.find(right, start + 1)
             if end < 0:
                 break
-            text = f"{text[:start]} {text[end + 1:]}"
+            text = f"{text[:start]} {text[end + 1 :]}"
 
-    for word in ("official", "lyrics", "lyric", "audio", "mv", "live", "cover", "remix", "伴奏", "纯音乐", "完整版", "无损"):
+    for word in (
+        "official",
+        "lyrics",
+        "lyric",
+        "audio",
+        "mv",
+        "live",
+        "cover",
+        "remix",
+        "伴奏",
+        "纯音乐",
+        "完整版",
+        "无损",
+    ):
         text = text.replace(word, " ")
 
     return " ".join(text.replace("-", " ").replace("_", " ").split())
@@ -65,7 +78,9 @@ def _parse_lyric_query(name: str) -> tuple[str, str, str]:
     cleaned = _normalize_lyric_keyword(name)
     parts = [part.strip() for part in cleaned.split(" ") if part.strip()]
     if "-" in (name or ""):
-        raw_parts = [part.strip() for part in name.rsplit(".", 1)[0].split("-") if part.strip()]
+        raw_parts = [
+            part.strip() for part in name.rsplit(".", 1)[0].split("-") if part.strip()
+        ]
         if len(raw_parts) >= 2:
             return raw_parts[0], raw_parts[-1], cleaned
     return cleaned, "", " ".join(parts)
@@ -74,7 +89,9 @@ def _parse_lyric_query(name: str) -> tuple[str, str, str]:
 def _netease_song_score(song: dict, track: str, artist: str) -> int:
     song_name = _normalize_lyric_keyword(song.get("name", ""))
     artists = song.get("artists") or []
-    artist_name = _normalize_lyric_keyword(" ".join(item.get("name", "") for item in artists))
+    artist_name = _normalize_lyric_keyword(
+        " ".join(item.get("name", "") for item in artists)
+    )
     track_name = _normalize_lyric_keyword(track)
     artist_query = _normalize_lyric_keyword(artist)
     score = 0
@@ -84,7 +101,11 @@ def _netease_song_score(song: dict, track: str, artist: str) -> int:
         score += 28
     if artist_query and artist_name == artist_query:
         score += 35
-    elif artist_query and artist_name and (artist_query in artist_name or artist_name in artist_query):
+    elif (
+        artist_query
+        and artist_name
+        and (artist_query in artist_name or artist_name in artist_query)
+    ):
         score += 18
     if "live" not in track_name and "live" in song_name:
         score -= 10
@@ -96,7 +117,9 @@ def _netease_song_score(song: dict, track: str, artist: str) -> int:
 def _qq_song_score(song: dict, track: str, artist: str) -> int:
     song_name = _normalize_lyric_keyword(song.get("songname", ""))
     singers = song.get("singer") or []
-    artist_name = _normalize_lyric_keyword(" ".join(item.get("name", "") for item in singers))
+    artist_name = _normalize_lyric_keyword(
+        " ".join(item.get("name", "") for item in singers)
+    )
     track_name = _normalize_lyric_keyword(track)
     artist_query = _normalize_lyric_keyword(artist)
     score = 0
@@ -106,7 +129,11 @@ def _qq_song_score(song: dict, track: str, artist: str) -> int:
         score += 30
     if artist_query and artist_name == artist_query:
         score += 35
-    elif artist_query and artist_name and (artist_query in artist_name or artist_name in artist_query):
+    elif (
+        artist_query
+        and artist_name
+        and (artist_query in artist_name or artist_name in artist_query)
+    ):
         score += 18
     if "live" not in track_name and "live" in song_name:
         score -= 10
@@ -144,11 +171,17 @@ async def search_qq_lyrics(name: str = Query(..., description="歌曲名")):
                 ) as response:
                     search_data = await response.json(content_type=None)
 
-                songs = ((search_data.get("data") or {}).get("song") or {}).get("list") or []
+                songs = ((search_data.get("data") or {}).get("song") or {}).get(
+                    "list"
+                ) or []
                 if not songs:
                     continue
 
-                songs = sorted(songs, key=lambda item: _qq_song_score(item, track, artist), reverse=True)
+                songs = sorted(
+                    songs,
+                    key=lambda item: _qq_song_score(item, track, artist),
+                    reverse=True,
+                )
                 for song in songs[:4]:
                     songmid = song.get("songmid")
                     if not songmid:
@@ -162,7 +195,9 @@ async def search_qq_lyrics(name: str = Query(..., description="歌曲名")):
                     lyric = html.unescape((lyric_data.get("lyric") or "").strip())
                     if lyric:
                         singers = song.get("singer") or []
-                        artist_name = " / ".join(item.get("name", "") for item in singers if item.get("name"))
+                        artist_name = " / ".join(
+                            item.get("name", "") for item in singers if item.get("name")
+                        )
                         return {
                             "success": True,
                             "source": "qq",
@@ -179,7 +214,10 @@ async def search_qq_lyrics(name: str = Query(..., description="歌曲名")):
 
 def _lyric_candidate_score(candidate: dict, track: str, artist: str) -> int:
     candidate_track = _normalize_lyric_keyword(
-        candidate.get("trackName") or candidate.get("name") or candidate.get("title") or ""
+        candidate.get("trackName")
+        or candidate.get("name")
+        or candidate.get("title")
+        or ""
     )
     candidate_artist = _normalize_lyric_keyword(
         candidate.get("artistName") or candidate.get("artist") or ""
@@ -193,11 +231,17 @@ def _lyric_candidate_score(candidate: dict, track: str, artist: str) -> int:
         score += 20
     if track_name and candidate_track == track_name:
         score += 45
-    elif track_name and (track_name in candidate_track or candidate_track in track_name):
+    elif track_name and (
+        track_name in candidate_track or candidate_track in track_name
+    ):
         score += 25
     if artist_query and candidate_artist == artist_query:
         score += 30
-    elif artist_query and candidate_artist and (artist_query in candidate_artist or candidate_artist in artist_query):
+    elif (
+        artist_query
+        and candidate_artist
+        and (artist_query in candidate_artist or candidate_artist in artist_query)
+    ):
         score += 14
     return score
 
@@ -226,13 +270,21 @@ async def search_lrclib_lyrics(name: str = Query(..., description="歌曲名")):
 
     try:
         connector = aiohttp.TCPConnector(ssl=False)
-        async with aiohttp.ClientSession(timeout=timeout, headers=headers, connector=connector) as session:
+        async with aiohttp.ClientSession(
+            timeout=timeout, headers=headers, connector=connector
+        ) as session:
             for params in queries:
-                async with session.get("https://lrclib.net/api/search", params=params) as response:
+                async with session.get(
+                    "https://lrclib.net/api/search", params=params
+                ) as response:
                     if response.status != 200:
                         continue
                     results = await response.json(content_type=None)
-                candidates = [item for item in results if item.get("syncedLyrics") or item.get("plainLyrics")]
+                candidates = [
+                    item
+                    for item in results
+                    if item.get("syncedLyrics") or item.get("plainLyrics")
+                ]
                 if not candidates:
                     continue
 
@@ -241,7 +293,9 @@ async def search_lrclib_lyrics(name: str = Query(..., description="歌曲名")):
                     key=lambda item: _lyric_candidate_score(item, track, artist),
                     reverse=True,
                 )[0]
-                lyrics = candidate.get("syncedLyrics") or candidate.get("plainLyrics") or ""
+                lyrics = (
+                    candidate.get("syncedLyrics") or candidate.get("plainLyrics") or ""
+                )
                 if lyrics.strip():
                     return {
                         "success": True,
@@ -309,7 +363,9 @@ async def search_netease_lyrics(name: str = Query(..., description="歌曲名"))
                 return {"success": False, "error": "No lyric found"}
 
             artists = song.get("artists") or []
-            artist_name = " / ".join(item.get("name", "") for item in artists if item.get("name"))
+            artist_name = " / ".join(
+                item.get("name", "") for item in artists if item.get("name")
+            )
             return {
                 "success": True,
                 "source": "netease",

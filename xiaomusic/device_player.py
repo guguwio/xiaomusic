@@ -704,9 +704,7 @@ class XiaoMusicDevice:
     async def get_if_xiaoai_is_playing(self, device_id=None):
         """检查小爱是否正在播放"""
         device_id = device_id or self.device_id
-        playing_info = await self.auth_manager.mina_service.player_get_status(
-            device_id
-        )
+        playing_info = await self.auth_manager.mina_service.player_get_status(device_id)
         self.log.info(playing_info)
         # WTF xiaomi api
         is_playing = (
@@ -1149,7 +1147,9 @@ class XiaoMusicDevice:
 
     async def resume_playback(self):
         """恢复当前歌曲播放。"""
-        self.log.info(f"resume_playback. did:{self.did} cur_music:{self.get_cur_music()}")
+        self.log.info(
+            f"resume_playback. did:{self.did} cur_music:{self.get_cur_music()}"
+        )
         cur_music = self.get_cur_music()
         if not cur_music:
             return await self._play_next()
