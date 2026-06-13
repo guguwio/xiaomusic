@@ -1,6 +1,6 @@
 # XiaoMusic 自用改版
 
-这是基于 [hanxi/xiaomusic](https://github.com/hanxi/xiaomusic) 修改的个人自用版本，主要围绕默认 Web 播放器界面、歌词搜索、歌词显示、歌词时间轴同步和 NAS Docker 部署流程做了调整。
+这是基于 [hanxi/xiaomusic](https://github.com/hanxi/xiaomusic) 修改的个人自用版本，主要围绕组合音箱双声道播放bug、默认 Web 播放器界面、歌词搜索、歌词显示、歌词时间轴同步和 NAS Docker 部署流程做了调整。
 
 原项目版权和许可证仍归原作者及贡献者所有。本仓库只记录我在原项目基础上的二次修改，方便在自己的 NAS 上拉取、构建和更新。
 
