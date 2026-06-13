@@ -8,7 +8,6 @@
 
 - 重新设计默认播放器首页 UI，使界面更简洁，并适配手机和电脑尺寸。
 - 将定时、测试、倍速、设置等低频功能收进“更多”二级菜单。
-- 歌曲下拉框选择歌曲后可直接播放，不再只是选中。
 - 新增歌词面板，支持播放时按时间轴高亮当前歌词。
 - 新增自动搜索歌词：播放或切歌时，本地没有歌词会自动在线匹配。
 - 新增歌词本地保存：搜索到的歌词会写入歌曲标签，下次播放优先读取。
@@ -20,8 +19,6 @@
   - 原在线插件兜底
 - 新增歌词时间轴调整功能，放在“更多”菜单中。
 - 歌词时间轴偏移会写入歌曲标签，换浏览器也能同步。
-- 取消歌词时间轴调整的正负 10 秒限制。
-- 固定歌词面板尺寸，避免歌词加载和切歌时页面跳动。
 - 播放下一曲/上一曲后自动同步当前歌曲和歌词。
 - 添加 NAS Docker 本地构建部署脚本 `deploy-xiaomusic-on-nas.sh`。
 
@@ -31,7 +28,6 @@
 https://github.com/guguwio/xiaomusic.git
 ```
 
-如果仓库设置为私有，NAS 拉取时需要 GitHub Token 或 SSH Deploy Key。
 
 ## 在 NAS 上拉取
 
@@ -42,12 +38,6 @@ cd /volume1/docker
 git clone https://github.com/guguwio/xiaomusic.git
 ```
 
-如果仓库是私有仓库，GitHub 会要求输入账号和密码：
-
-```text
-Username: guguwio
-Password: GitHub Personal Access Token
-```
 
 以后更新代码：
 
@@ -56,20 +46,7 @@ cd /volume1/docker/xiaomusic
 git pull
 ```
 
-## 使用 SSH Key 拉取私有仓库
 
-也可以在 NAS 上创建 SSH Key：
-
-```bash
-ssh-keygen -t ed25519 -C "nas-xiaomusic"
-cat ~/.ssh/id_ed25519.pub
-```
-
-把输出的公钥添加到 GitHub 仓库：
-
-```text
-仓库 Settings -> Deploy keys -> Add deploy key
-```
 
 如果 NAS 只需要拉取代码，不需要勾选 `Allow write access`。
 
