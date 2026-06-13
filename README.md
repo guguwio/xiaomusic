@@ -49,10 +49,12 @@ git pull
 
 ## Docker 部署
 
+下面的 `guguwio/xiaomusic:latest` 是在本机或 NAS 上通过当前仓库源码构建出来的镜像标签。项目代码仍然通过前面的 `git clone https://github.com/guguwio/xiaomusic.git` 拉取。
+
 进入项目目录后构建镜像：
 
 ```bash
-docker build -t xiaomusic-custom:latest .
+docker build -t guguwio/xiaomusic:latest .
 ```
 
 启动容器示例：
@@ -66,7 +68,7 @@ docker run -d \
   -v /volume1/docker/xiaomusic:/app/conf \
   -v /volume1/music:/app/music \
   --restart unless-stopped \
-  xiaomusic-custom:latest
+  guguwio/xiaomusic:latest
 ```
 
 访问地址：
@@ -81,7 +83,7 @@ http://你的服务器IP:58090
 docker stop xiaomusic
 docker rm xiaomusic
 git pull
-docker build -t xiaomusic-custom:latest .
+docker build -t guguwio/xiaomusic:latest .
 docker run -d \
   --name xiaomusic \
   -p 58090:8090 \
@@ -90,7 +92,7 @@ docker run -d \
   -v /volume1/docker/xiaomusic:/app/conf \
   -v /volume1/music:/app/music \
   --restart unless-stopped \
-  xiaomusic-custom:latest
+  guguwio/xiaomusic:latest
 ```
 
 ## Docker Compose 部署
@@ -101,7 +103,7 @@ docker run -d \
 services:
   xiaomusic:
     build: .
-    image: xiaomusic-custom:latest
+    image: guguwio/xiaomusic:latest
     container_name: xiaomusic
     environment:
       - XIAOMUSIC_PUBLIC_PORT=58090
