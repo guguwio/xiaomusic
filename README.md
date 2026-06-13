@@ -1,387 +1,204 @@
-# XiaoMusic: 无限听歌，解放小爱音箱
+# XiaoMusic 自用改版
 
-> [!IMPORTANT]
-> **📢 项目停止维护通知**
->
-> 因个人精力有限，需将重心转移到其他项目，本项目将停止维护，不再接受新功能开发与 bug 修复，已有 issue 与 PR 也不再处理。
->
-> 后续推荐使用社区接力项目：**[songloft-org/songloft](https://github.com/songloft-org/songloft)**，欢迎大家迁移、参与共建。
->
-> 衷心感谢一路以来所有用户的支持与陪伴 ❤️
+这是基于 [hanxi/xiaomusic](https://github.com/hanxi/xiaomusic) 修改的个人自用版本，主要围绕默认 Web 播放器界面、歌词搜索、歌词显示、歌词时间轴同步和 NAS Docker 部署流程做了调整。
 
-[![GitHub License](https://img.shields.io/github/license/hanxi/xiaomusic)](https://github.com/hanxi/xiaomusic)
-[![Docker Image Version](https://img.shields.io/docker/v/hanxi/xiaomusic?sort=semver&label=docker%20image)](https://hub.docker.com/r/hanxi/xiaomusic)
-[![Docker Pulls](https://img.shields.io/docker/pulls/hanxi/xiaomusic)](https://hub.docker.com/r/hanxi/xiaomusic)
-[![PyPI - Version](https://img.shields.io/pypi/v/xiaomusic)](https://pypi.org/project/xiaomusic/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/xiaomusic)](https://pypi.org/project/xiaomusic/)
-[![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fhanxi%2Fxiaomusic%2Fmain%2Fpyproject.toml)](https://pypi.org/project/xiaomusic/)
-[![GitHub Release](https://img.shields.io/github/v/release/hanxi/xiaomusic)](https://github.com/hanxi/xiaomusic/releases)
-[![Visitors](https://api.visitorbadge.io/api/daily?path=hanxi%2Fxiaomusic&label=daily%20visitor&countColor=%232ccce4&style=flat)](https://visitorbadge.io/status?path=hanxi%2Fxiaomusic)
-[![Visitors](https://api.visitorbadge.io/api/visitors?path=hanxi%2Fxiaomusic&label=total%20visitor&countColor=%232ccce4&style=flat)](https://visitorbadge.io/status?path=hanxi%2Fxiaomusic)
+原项目版权和许可证仍归原作者及贡献者所有。本仓库只记录我在原项目基础上的二次修改，方便在自己的 NAS 上拉取、构建和更新。
 
----
+## 修改内容
 
-<p align="center">
-  <strong>🎵 使用小爱音箱播放音乐，音乐使用 yt-dlp 下载</strong>
-</p>
+- 重新设计默认播放器首页 UI，使界面更简洁，并适配手机和电脑尺寸。
+- 将定时、测试、倍速、设置等低频功能收进“更多”二级菜单。
+- 歌曲下拉框选择歌曲后可直接播放，不再只是选中。
+- 新增歌词面板，支持播放时按时间轴高亮当前歌词。
+- 新增自动搜索歌词：播放或切歌时，本地没有歌词会自动在线匹配。
+- 新增歌词本地保存：搜索到的歌词会写入歌曲标签，下次播放优先读取。
+- 新增繁体转简体：在线歌词保存和显示前会转换为简体。
+- 新增歌词搜索后端代理：
+  - LRCLIB
+  - QQ 音乐
+  - 网易云音乐
+  - 原在线插件兜底
+- 新增歌词时间轴调整功能，放在“更多”菜单中。
+- 歌词时间轴偏移会写入歌曲标签，换浏览器也能同步。
+- 取消歌词时间轴调整的正负 10 秒限制。
+- 固定歌词面板尺寸，避免歌词加载和切歌时页面跳动。
+- 播放下一曲/上一曲后自动同步当前歌曲和歌词。
+- 添加 NAS Docker 本地构建部署脚本 `deploy-xiaomusic-on-nas.sh`。
 
-<p align="center">
-  <a href="https://github.com/hanxi/xiaomusic">🏠 GitHub</a> •
-  <a href="https://xdocs.hanxi.cc/">📖 文档</a> •
-  <a href="https://github.com/hanxi/xiaomusic/issues/99">💬 FAQ</a> •
-  <a href="#-讨论区">💭 讨论区</a>
-</p>
-
----
-
-> [!TIP]
-> **新手指南**：初次安装遇到问题请查阅 [💬 FAQ问题集合](https://github.com/hanxi/xiaomusic/issues/99)，一般遇到的问题都已经有解决办法。
-
-## 👋 快速入门指南
-
-已经支持在 web 设置页面配置其他参数，不再需要设置环境变量， docker compose 配置如下（选一个即可）：
-
-```yaml
-services:
-  xiaomusic:
-    image: hanxi/xiaomusic
-    container_name: xiaomusic
-    restart: always
-    ports:
-      - 58090:8090
-    volumes:
-      - /xiaomusic_music:/app/music
-      - /xiaomusic_conf:/app/conf
-```
-
-🔥 国内：
-
-```yaml
-services:
-  xiaomusic:
-    image: docker.hanxi.cc/hanxi/xiaomusic
-    container_name: xiaomusic
-    restart: always
-    ports:
-      - 58090:8090
-    volumes:
-      - /xiaomusic_music:/app/music
-      - /xiaomusic_conf:/app/conf
-```
-
-测试版：
-
-```yaml
-services:
-  xiaomusic:
-    image: hanxi/xiaomusic:main
-    container_name: xiaomusic
-    restart: always
-    ports:
-      - 58090:8090
-    volumes:
-      - /xiaomusic_music:/app/music
-      - /xiaomusic_conf:/app/conf
-```
-
-对应的 docker 启动命令如下:
+## 仓库地址
 
 ```bash
-docker run -p 58090:8090 -v /xiaomusic_music:/app/music -v /xiaomusic_conf:/app/conf hanxi/xiaomusic
+https://github.com/guguwio/xiaomusic.git
 ```
 
-🔥 国内：
+如果仓库设置为私有，NAS 拉取时需要 GitHub Token 或 SSH Deploy Key。
+
+## 在 NAS 上拉取
+
+SSH 登录 NAS 后，建议放在 `/volume1/docker` 下：
 
 ```bash
-docker run -p 58090:8090 -v /xiaomusic_music:/app/music -v /xiaomusic_conf:/app/conf docker.hanxi.cc/hanxi/xiaomusic
+cd /volume1/docker
+git clone https://github.com/guguwio/xiaomusic.git
 ```
 
-测试版：
+如果仓库是私有仓库，GitHub 会要求输入账号和密码：
 
-```
-docker run -p 58090:8090 -v /xiaomusic_music:/app/music -v /xiaomusic_conf:/app/conf hanxi/xiaomusic:main
-```
-
-- 其中 conf 目录为配置文件存放目录，music 目录为音乐存放目录，建议分开配置为不同的目录。
-- /xiaomusic_music 和 /xiaomusic_conf 是 docker 所在的主机的目录，可以修改为其他目录。如果报错找不到 /xiaomusic_music 目录，可以先执行 `mkdir -p /xiaomusic_{music,conf}` 命令新建目录。
-- /app/music 和 /app/conf 是 docker 容器里的目录，不要去修改。
-- 58090 是 NAS 本地端口的。8090 是容器端口，不要去修改。
-- 后台访问地址为： http://NAS_IP:58090
-
-> [!NOTE]
-> docker 和 docker compose 二选一即可，启动成功后，在 web 页面可以配置其他参数，带有 `*` 号的配置是必须要配置的，其他的用不上时不用修改。初次配置时需要在页面上输入小米账号和密码保存后才能获取到设备列表。
-
-> [!TIP]
-> 如果两个小爱音箱已经在米家 App 里组成双声道/立体声组合，不建议再用 xiaomusic 的 `group_list` 同时向两个物理音箱下发播放命令，否则容易出现两个音箱各自独立播放、声像不集中或轻微不同步。默认 `group_play_mode="auto"` 会在同组两台疑似立体声组合设备时只命令主音箱播放，副音箱由小米自己的双声道组合接管同步。也可以显式设置 `group_play_mode` 为 `master`，并用 `group_play_master` 指定该组的主音箱 DID，例如 `group_list="did_left:客厅,did_right:客厅"`、`group_play_mode="master"`、`group_play_master="客厅:did_left"`。如果你需要真正的多房间同时播放，可以改回 `group_play_mode="all"`。
-
-遇到问题可以去 web 设置页面底部点击【下载日志文件】按钮，然后搜索一下日志文件内容确保里面没有账号密码信息后(有就删除这些敏感信息)，然后在提 issues 反馈问题时把下载的日志文件带上。
-
-> [!TIP]
-> 作者新写了一个更简洁的个人音乐服务器，支持更强的插件扩展 <https://github.com/mimusic-org/mimusic>
-
-> [!TIP]
-> - 适用于 NAS 上安装的开源工具： <https://github.com/hanxi/tiny-nav>
-> - 适用于 NAS 上安装的网页打印机： <https://github.com/hanxi/cups-web>
-> - PVE 移动端 UI 界面：<https://github.com/hanxi/pve-touch>
-> - 喜欢听书的可以配合这个工具使用 <https://github.com/hanxi/epub2mp3>
-
-> [!TIP]
->
-> - 🔥【广告:可用于安装 frp 实现内网穿透】
-> - 🔥 海外 RackNerd VPS 机器推荐，可支付宝付款。
-> - <a href="https://my.racknerd.com/aff.php?aff=11177"><img src="https://racknerd.com/banners/320x50.gif" alt="RackNerd Mobile Leaderboard Banner" width="320" height="50"></a>
-> - 不知道选哪个套餐可以直接买这个最便宜的 <https://my.racknerd.com/aff.php?aff=11177&pid=923>
-> - 也可以用来部署代理，docker 部署方法见 <https://github.com/hanxi/blog/issues/96>
-
-> [!TIP]
->
-> - 🔥【广告: 搭建您的专属大模型主页
-告别繁琐配置难题，一键即可畅享稳定流畅的AI体验！】<https://university.aliyun.com/mobile?userCode=szqvatm6>
-
-> [!TIP]
-> - 免费主机
-> - <a href="https://dartnode.com?aff=SnappyPigeon570"><img src="https://dartnode.com/branding/DN-Open-Source-sm.png" alt="Powered by DartNode - Free VPS for Open Source" width="320"></a>
-
-
-## 🎤 功能特性
-
-### 🤐 支持语音口令
-
-#### 基础播放控制
-- **播放歌曲** - 播放本地的歌曲
-- **播放歌曲+歌名** - 例如：播放歌曲周杰伦晴天
-- **上一首** / **下一首** - 切换歌曲
-- **关机** / **停止播放** - 停止播放
-
-#### 播放模式
-- **单曲循环** - 重复播放当前歌曲
-- **全部循环** - 循环播放所有歌曲
-- **随机播放** - 随机顺序播放
-
-#### 歌单管理
-- **播放歌单+目录名** - 例如：播放歌单其他
-- **播放歌单第几个+列表名** - 详见 [#158](https://github.com/hanxi/xiaomusic/issues/158)
-- **播放歌单收藏** - 播放收藏歌单
-
-#### 收藏功能
-- **加入收藏** - 将当前播放的歌曲加入收藏歌单
-- **取消收藏** - 将当前播放的歌曲从收藏歌单移除
-
-> [!TIP]
-> **隐藏玩法**：对小爱同学说"播放歌曲小猪佩奇的故事"，会先下载小猪佩奇的故事，然后再播放。
-
-## 📦 安装方式
-
-### 方式一：Docker Compose（推荐）
-
-详见 [👋 快速入门指南](#-快速入门指南)
-
-### 方式二：Pip 安装
-
-```shell
-# 安装
-pip install -U xiaomusic
-
-# 查看帮助
-xiaomusic --help
-
-# 启动（使用配置文件）
-xiaomusic --config config.json
-
-# 启动（使用默认端口 8090）
-xiaomusic
+```text
+Username: guguwio
+Password: GitHub Personal Access Token
 ```
 
-> [!NOTE]
-> `config.json` 文件可以参考 `config-example.json` 文件配置。详见 [#94](https://github.com/hanxi/xiaomusic/issues/94)
+以后更新代码：
 
-## 👨‍💻 开发指南
-
-### 🔩 开发环境运行
-
-1. **下载依赖**
-   ```shell
-   ./install_dependencies.sh
-   ```
-
-2. **安装环境**
-   ```shell
-   pdm install
-   ```
-
-3. **启动服务**
-   ```shell
-   pdm run xiaomusic.py
-   ```
-   默认监听端口 8090，使用其他端口请自行修改。
-
-4. **查看 API 文档**
-   
-   访问 <http://localhost:8090/docs> 查看接口文档。
-
-> [!NOTE]
-> 目前的 web 控制台非常简陋，欢迎有兴趣的朋友帮忙实现一个漂亮的前端，需要什么接口可以随时提需求。
-
-### 🚦 代码提交规范
-
-提交前请执行以下命令检查代码和格式化代码：
-
-```shell
-pdm lintfmt
+```bash
+cd /volume1/docker/xiaomusic
+git pull
 ```
 
-### 🐳 本地编译 Docker Image
+## 使用 SSH Key 拉取私有仓库
 
-```shell
-docker build -t xiaomusic .
+也可以在 NAS 上创建 SSH Key：
+
+```bash
+ssh-keygen -t ed25519 -C "nas-xiaomusic"
+cat ~/.ssh/id_ed25519.pub
 ```
 
-### 🛠️ 技术栈
+把输出的公钥添加到 GitHub 仓库：
 
-- **后端**：Python + FastAPI 框架
-- **容器化**：Docker
-- **前端**：jQuery
+```text
+仓库 Settings -> Deploy keys -> Add deploy key
+```
 
-## 📱 设备支持
+如果 NAS 只需要拉取代码，不需要勾选 `Allow write access`。
 
-### 已测试支持的设备
+然后使用 SSH 地址拉取：
 
-| 型号 | 设备名称 |
-|------|---------|
-| **L06A** | [小爱音箱](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.l06a) |
-| **L07A** | [Redmi小爱音箱 Play](https://home.mi.com/webapp/content/baike/product/index.html?model=xiaomi.wifispeaker.l7a) |
-| **S12/S12A/MDZ-25-DA** | [小米AI音箱](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.s12) |
-| **LX5A** | [小爱音箱 万能遥控版](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.lx5a) |
-| **LX05** | [小爱音箱Play（2019款）](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.lx05) |
-| **L15A** | [小米AI音箱（第二代）](https://home.mi.com/webapp/content/baike/product/index.html?model=xiaomi.wifispeaker.l15a#/) |
-| **L16A** | [Xiaomi Sound](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.l16a) |
-| **L17A** | [Xiaomi Sound Pro](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.l17a) |
-| **LX06** | [小爱音箱Pro](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.lx06) |
-| **LX01** | [小爱音箱mini](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.lx01) |
-| **L05B** | [小爱音箱Play](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.l05b) |
-| **L05C** | [小米小爱音箱Play 增强版](https://home.mi.com/baike/index.html#/detail?model=xiaomi.wifispeaker.l05c) |
-| **L09A** | [小米音箱Art](https://home.mi.com/webapp/content/baike/product/index.html?model=xiaomi.wifispeaker.l09a) |
-| **LX04/X10A/X08A** | 触屏版音箱 |
-| **X08C/X08E/X8F** | 触屏版音箱 |
-| **M01/XMYX01JY** | 小米小爱音箱HD |
-| **OH2P** | XIAOMI 智能音箱 Pro |
-| **OH2** | XIAOMI 智能音箱 |
+```bash
+cd /volume1/docker
+git clone git@github.com:guguwio/xiaomusic.git
+```
 
-> [!NOTE]
-> - 型号与产品名称对照可在 [小米IoT平台](https://home.miot-spec.com/s/xiaomi.wifispeaker) 查询
-> - 如果你的设备支持播放，请反馈给我添加到支持列表里，谢谢
-> - 目前应该所有设备类型都已经支持播放，有问题可随时反馈
+更新：
 
-### 🎵 支持音乐格式
+```bash
+cd /volume1/docker/xiaomusic
+git pull
+```
 
-- **mp3** - 标准音频格式
-- **flac** - 无损音频格式
-- **wav** - 无损音频格式
-- **ape** - 无损音频格式
-- **ogg** - 开源音频格式
-- **m4a** - AAC 音频格式
+## Docker Compose 部署
 
-> [!NOTE]
-> - 本地音乐会搜索目录下上面格式的文件，下载的歌曲是 mp3 格式
-> - 已知 L05B、L05C、LX06、L16A 不支持 flac 格式
-> - 如果格式不能播放可以打开【转换为MP3】和【型号兼容模式】选项，详见 [#153](https://github.com/hanxi/xiaomusic/issues/153#issuecomment-2328168689)
+本项目默认容器端口仍是 `8090`，NAS 对外端口示例为 `58090`。
 
-## 🌏 网络歌单功能
+```yaml
+services:
+  xiaomusic:
+    image: xiaomusic-local:codex
+    container_name: xiaomusic
+    environment:
+      - XIAOMUSIC_PUBLIC_PORT=58090
+      - TZ=Asia/Shanghai
+    ports:
+      - "58090:8090"
+    volumes:
+      - /volume1/docker/xiaomusic:/app/conf
+      - /volume1/music:/app/music
+    restart: "no"
+```
 
-可以配置一个 json 格式的歌单，支持电台和歌曲，也可以直接用别人分享的链接。同时配备了 m3u 文件格式转换工具，可以很方便地把 m3u 电台文件转换成网络歌单格式的 json 文件。
+构建并启动：
 
-详细用法见 [#78](https://github.com/hanxi/xiaomusic/issues/78)
+```bash
+cd /volume1/docker/xiaomusic
+docker build -t xiaomusic-local:codex .
+docker compose up -d --force-recreate
+```
 
-> [!NOTE]
-> 欢迎有想法的朋友们制作更多的歌单转换工具，一起完善项目功能！
+访问地址：
 
-## ⚠️ 安全提醒
+```text
+http://NAS_IP:58090
+```
 
-> [!IMPORTANT]
->
-> 1. 如果配置了公网访问 xiaomusic ，请一定要开启密码登陆，并设置复杂的密码。且不要在公共场所的 WiFi 环境下使用，否则可能造成小米账号密码泄露。
-> 2. 强烈不建议将小爱音箱的小米账号绑定摄像头，代码难免会有 bug ，一旦小米账号密码泄露，可能监控录像也会泄露。
+## 使用部署脚本
 
-## 💬 社区与支持
+仓库内包含 `deploy-xiaomusic-on-nas.sh`，这是我用于把本地修改打包上传到 NAS 后重建容器的脚本。默认路径如下：
 
-### 📢 讨论区
+```text
+源码构建目录：/volume1/docker/xiaomusic-build
+应用配置目录：/volume1/docker/xiaomusic
+音乐目录：/volume1/music
+镜像名：xiaomusic-local:codex
+容器名：xiaomusic
+端口：58090:8090
+```
 
-<p align="center">
-  <a href="https://github.com/hanxi/xiaomusic/issues">💬 GitHub Issues</a> •
-  <a href="https://pd.qq.com/s/e2jybz0ss">🎮 QQ频道</a> •
-  <a href="https://qm.qq.com/q/vQtFRinceA">👥 QQ交流群</a> •
-  <a href="https://github.com/hanxi/xiaomusic/issues/86">💬 微信群</a>
-</p>
+如果已经把压缩包放到：
 
-### 🤝 如何贡献
+```text
+/volume1/docker/xiaomusic-build/xiaomusic-main-deploy.tar.gz
+```
 
-我们欢迎所有形式的贡献，包括但不限于：
+可以执行：
 
-- 🐛 **报告 Bug**：在 [Issues](https://github.com/hanxi/xiaomusic/issues) 中提交问题
-- 💡 **功能建议**：分享你的想法和建议
-- 📝 **改进文档**：帮助完善文档和教程
-- 🎨 **前端美化**：优化 Web 控制台界面
-- 🔧 **代码贡献**：提交 Pull Request
+```bash
+cd /volume1/docker/xiaomusic-build
+chmod +x deploy-xiaomusic-on-nas.sh
+sudo sh ./deploy-xiaomusic-on-nas.sh
+```
 
-> [!TIP]
-> 提交代码前请确保运行 `pdm lintfmt` 检查代码规范
+## 歌词功能说明
 
-## 📚 相关资源
+播放歌曲时，页面会按以下顺序加载歌词：
 
-### 👉 更多教程
+1. 读取歌曲标签里的本地歌词。
+2. 如果没有歌词，自动尝试在线搜索。
+3. 搜索命中后写入歌曲标签。
+4. 下次播放同一首歌时直接读取本地标签。
 
-更多功能见 [📝 文档汇总](https://github.com/hanxi/xiaomusic/issues/211)
+歌词来源顺序：
 
-### 🎨 第三方主题
+```text
+本地标签 -> LRCLIB -> QQ 音乐 -> 网易云音乐 -> 原在线插件
+```
 
-- [pure 主题 xiaomusicUI](https://github.com/52fisher/xiaomusicUI)
-- [移动端的播放器主题](https://github.com/52fisher/XMusicPlayer)
-- [Tailwind主题](https://github.com/clarencejh/xiaomusic)
-- [SoundScape主题](https://github.com/jhao0413/SoundScape)
-- [第三方主题](https://github.com/DarrenWen/xiaomusicui)
+歌词时间轴偏移也会写入歌曲歌词标签中，格式为内部标记：
 
-### 📱 配套应用
+```text
+[x-xiaomusic-offset:1.5]
+```
 
-- [微信小程序: 卯卯音乐](https://github.com/F-loat/xiaoplayer)
-- [手机APP: 风花雪乐](https://github.com/jokezc/mi_music)
-- [JS在线播放插件](https://github.com/boluofan/xiaomusic-online)
-- [手机APP: HMusic](https://github.com/hpcll/HMusic)
-- [安卓TV: 肉肉音乐TV](https://github.com/GanHuaLin/rouroumusic-tv)
+页面显示时会隐藏这行标记，只用于同步歌词时间轴。
 
-### ❤️ 致谢
+## 开发运行
 
-**核心依赖**
-- [xiaomi](https://www.mi.com/) - 小米智能设备
-- [xiaogpt](https://github.com/yihong0618/xiaogpt) - 项目灵感来源
-- [MiService](https://github.com/yihong0618/MiService) - 小米服务接口
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - 音乐下载工具
+安装依赖：
 
-**开发工具**
-- [PDM](https://pdm.fming.dev/latest/) - Python 包管理
-- [FastAPI](https://fastapi.tiangolo.com/) - Web 框架
-- [Umami](https://github.com/umami-software/umami) - 统计分析
-- [Sentry](https://github.com/getsentry/sentry) - 报错监控
+```bash
+pdm install
+```
 
-**参考资料**
-- [实现原理](https://github.com/yihong0618/gitblog/issues/258)
-- [awesome-xiaoai](https://github.com/zzz6519003/awesome-xiaoai)
+启动：
 
-**特别感谢**
-- 所有帮忙调试和测试的朋友
-- 所有反馈问题和建议的朋友
-- 所有贡献代码和文档的开发者
+```bash
+pdm run xiaomusic.py
+```
 
-## 🚨 免责声明
+默认访问：
 
-本项目仅供学习和研究目的，不得用于任何商业活动。用户在使用本项目时应遵守所在地区的法律法规，对于违法使用所导致的后果，本项目及作者不承担任何责任。
-本项目可能存在未知的缺陷和风险（包括但不限于设备损坏和账号封禁等），使用者应自行承担使用本项目所产生的所有风险及责任。
-作者不保证本项目的准确性、完整性、及时性、可靠性，也不承担任何因使用本项目而产生的任何损失或损害责任。
-使用本项目即表示您已阅读并同意本免责声明的全部内容。
+```text
+http://localhost:8090
+```
 
-## Star History
+## 与原项目关系
 
-[![Star History Chart](https://api.star-history.com/svg?repos=hanxi/xiaomusic&type=Date)](https://star-history.com/#hanxi/xiaomusic&Date)
+本仓库不是原项目的官方版本。原始项目地址：
 
-## License
+[https://github.com/hanxi/xiaomusic](https://github.com/hanxi/xiaomusic)
 
-[MIT](https://github.com/hanxi/xiaomusic/blob/main/LICENSE) License © 2024 涵曦
+感谢原作者提供 XiaoMusic 的基础能力，包括小爱音箱播放、本地音乐管理、Docker 部署和 Web 控制台等。本仓库只是在这些基础上做个人化修改。
+
+## 许可证
+
+沿用原项目许可证。详见 [LICENSE](./LICENSE)。
