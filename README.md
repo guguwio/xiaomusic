@@ -1,26 +1,29 @@
 # XiaoMusic 自用改版
 
-这是基于 [hanxi/xiaomusic](https://github.com/hanxi/xiaomusic) 修改的个人自用版本，主要围绕组合音箱双声道播放bug、默认 Web 播放器界面、歌词搜索、歌词显示、歌词时间轴同步和 NAS Docker 部署流程做了调整。
+这是我基于 [hanxi/xiaomusic](https://github.com/hanxi/xiaomusic) 修改的个人自用版本，主要围绕组合音箱双声道播放 bug、默认 Web 播放器界面、移动端适配、歌词搜索、歌词显示、歌词时间轴同步和公网拉取部署流程做了调整。
 
-原项目版权和许可证仍归原作者及贡献者所有。本仓库只记录我在原项目基础上的二次修改，方便在自己的 NAS 上拉取、构建和更新。
+原项目版权和许可证仍归原作者及贡献者所有。本仓库用于记录我在原项目基础上的二次修改，方便在自己的 NAS 或服务器上直接从 GitHub 拉取、构建和更新。
 
 ## 修改内容
 
-- 重新设计默认播放器首页 UI，使界面更简洁，并适配手机和电脑尺寸。
+- 修复或优化组合音箱双声道播放相关问题。
+- 重新设计默认播放器首页 UI，让界面更简洁，并适配手机和电脑尺寸。
 - 将定时、测试、倍速、设置等低频功能收进“更多”二级菜单。
+- 歌曲下拉框选择歌曲后可直接播放，不再只是选中。
 - 新增歌词面板，支持播放时按时间轴高亮当前歌词。
-- 新增自动搜索歌词：播放或切歌时，本地没有歌词会自动在线匹配。
+- 新增播放或切歌时自动搜索下载歌词。
 - 新增歌词本地保存：搜索到的歌词会写入歌曲标签，下次播放优先读取。
 - 新增繁体转简体：在线歌词保存和显示前会转换为简体。
-- 新增歌词搜索后端代理：
+- 优化歌词搜索速度和命中率，增加多个在线来源：
   - LRCLIB
   - QQ 音乐
   - 网易云音乐
   - 原在线插件兜底
-- 新增歌词时间轴调整功能，放在“更多”菜单中。
-- 歌词时间轴偏移会写入歌曲标签，换浏览器也能同步。
-- 播放下一曲/上一曲后自动同步当前歌曲和歌词。
-- 添加 NAS Docker 本地构建部署脚本 `deploy-xiaomusic-on-nas.sh`。
+- 新增歌词时间轴调整功能，并放入“更多”菜单。
+- 歌词时间轴偏移会写入歌曲文件标签，换浏览器或换设备访问也能同步。
+- 取消歌词时间轴调整的正负 10 秒限制。
+- 固定歌词面板尺寸，避免歌词加载和切歌时页面跳动。
+- 播放下一曲、上一曲后自动同步当前歌曲和歌词。
 
 ## 仓库地址
 
@@ -28,50 +31,77 @@
 https://github.com/guguwio/xiaomusic.git
 ```
 
+## 公网拉取部署
 
-## 在 NAS 上拉取
-
-SSH 登录 NAS 后，建议放在 `/volume1/docker` 下：
+本仓库已设置为公开仓库，可以直接在 NAS、服务器或本地 Docker 环境中通过公网拉取。
 
 ```bash
-cd /volume1/docker
 git clone https://github.com/guguwio/xiaomusic.git
+cd xiaomusic
 ```
 
-
-以后更新代码：
+如果已经拉取过，以后更新代码：
 
 ```bash
-cd /volume1/docker/xiaomusic
+cd xiaomusic
 git pull
 ```
 
+## Docker 部署
 
-
-如果 NAS 只需要拉取代码，不需要勾选 `Allow write access`。
-
-然后使用 SSH 地址拉取：
+进入项目目录后构建镜像：
 
 ```bash
-cd /volume1/docker
-git clone git@github.com:guguwio/xiaomusic.git
+docker build -t xiaomusic-custom:latest .
 ```
 
-更新：
+启动容器示例：
 
 ```bash
-cd /volume1/docker/xiaomusic
+docker run -d \
+  --name xiaomusic \
+  -p 58090:8090 \
+  -e TZ=Asia/Shanghai \
+  -e XIAOMUSIC_PUBLIC_PORT=58090 \
+  -v /volume1/docker/xiaomusic:/app/conf \
+  -v /volume1/music:/app/music \
+  --restart unless-stopped \
+  xiaomusic-custom:latest
+```
+
+访问地址：
+
+```text
+http://你的服务器IP:58090
+```
+
+如果需要重新部署：
+
+```bash
+docker stop xiaomusic
+docker rm xiaomusic
 git pull
+docker build -t xiaomusic-custom:latest .
+docker run -d \
+  --name xiaomusic \
+  -p 58090:8090 \
+  -e TZ=Asia/Shanghai \
+  -e XIAOMUSIC_PUBLIC_PORT=58090 \
+  -v /volume1/docker/xiaomusic:/app/conf \
+  -v /volume1/music:/app/music \
+  --restart unless-stopped \
+  xiaomusic-custom:latest
 ```
 
 ## Docker Compose 部署
 
-本项目默认容器端口仍是 `8090`，NAS 对外端口示例为 `58090`。
+也可以在项目目录中新建 `docker-compose.yml`：
 
 ```yaml
 services:
   xiaomusic:
-    image: xiaomusic-local:codex
+    build: .
+    image: xiaomusic-custom:latest
     container_name: xiaomusic
     environment:
       - XIAOMUSIC_PUBLIC_PORT=58090
@@ -81,48 +111,20 @@ services:
     volumes:
       - /volume1/docker/xiaomusic:/app/conf
       - /volume1/music:/app/music
-    restart: "no"
+    restart: unless-stopped
 ```
 
-构建并启动：
+启动：
 
 ```bash
-cd /volume1/docker/xiaomusic
-docker build -t xiaomusic-local:codex .
-docker compose up -d --force-recreate
+docker compose up -d --build
 ```
 
-访问地址：
-
-```text
-http://NAS_IP:58090
-```
-
-## 使用部署脚本
-
-仓库内包含 `deploy-xiaomusic-on-nas.sh`，这是我用于把本地修改打包上传到 NAS 后重建容器的脚本。默认路径如下：
-
-```text
-源码构建目录：/volume1/docker/xiaomusic-build
-应用配置目录：/volume1/docker/xiaomusic
-音乐目录：/volume1/music
-镜像名：xiaomusic-local:codex
-容器名：xiaomusic
-端口：58090:8090
-```
-
-如果已经把压缩包放到：
-
-```text
-/volume1/docker/xiaomusic-build/xiaomusic-main-deploy.tar.gz
-```
-
-可以执行：
+更新：
 
 ```bash
-cd /volume1/docker/xiaomusic-build
-chmod +x deploy-xiaomusic-on-nas.sh
-sudo sh ./deploy-xiaomusic-on-nas.sh
+git pull
+docker compose up -d --build
 ```
 
 ## 歌词功能说明
